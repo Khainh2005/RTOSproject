@@ -1,0 +1,171 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[margin=1in,headheight=30pt,headsep=14pt,footskip=28pt]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage{lmodern}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{textcomp}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\rightarrow}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{placeins}
+\usepackage[table]{xcolor}
+\usepackage{tabularx,array,longtable,booktabs}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{ragged2e}
+\usepackage{setspace}
+\usepackage{needspace}
+
+\definecolor{RTOSBlue}{HTML}{1F4E79}
+\definecolor{HeaderGray}{HTML}{595959}
+\definecolor{RuleGray}{HTML}{BFBFBF}
+\definecolor{CodeBackground}{HTML}{F4F6F8}
+\definecolor{CodeRule}{HTML}{D9DEE3}
+
+\hypersetup{colorlinks=true,urlcolor=RTOSBlue,linkcolor=RTOSBlue}
+\setcounter{secnumdepth}{2}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt}
+\setstretch{1.04}
+\setlist[itemize]{leftmargin=1.55em,itemsep=2.5pt,topsep=3pt,parsep=0pt}
+\setlist[itemize,2]{label=\textopenbullet,leftmargin=1.7em}
+\emergencystretch=2em
+\captionsetup{font=small,labelfont=bf,justification=centering}
+\captionsetup[subfigure]{font=small,labelfont=bf,justification=centering}
+\setlength{\textfloatsep}{14pt plus 2pt minus 4pt}
+\setlength{\floatsep}{12pt plus 2pt minus 3pt}
+\setlength{\intextsep}{12pt plus 2pt minus 3pt}
+
+\titleformat{\section}
+  {\color{RTOSBlue}\bfseries\fontsize{15}{18}\selectfont}
+  {\thesection.}{0.5em}{}
+  [\vspace{2pt}\color{RTOSBlue}\titlerule]
+\titlespacing*{\section}{0pt}{18pt}{9pt}
+
+\titleformat{\subsection}
+  {\color{black}\bfseries\fontsize{12.5}{15}\selectfont}
+  {\thesubsection}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{13pt}{7pt}
+
+\lstdefinestyle{rtoscode}{
+  language=Python,
+  basicstyle=\ttfamily\scriptsize,
+  backgroundcolor=\color{CodeBackground},
+  frame=single,
+  rulecolor=\color{CodeRule},
+  framesep=5pt,
+  xleftmargin=0.6em,
+  xrightmargin=0.6em,
+  aboveskip=5pt,
+  belowskip=5pt,
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  tabsize=4
+}
+\lstset{style=rtoscode}
+
+\fancypagestyle{reportstyle}{
+  \fancyhf{}
+  \fancyhead[L]{\color{HeaderGray}\fontsize{9}{11}\selectfont RTOS Project Report - Smart Controller System}
+%   \fancyhead[R]{\color{HeaderGray}\fontsize{9}{11}\selectfont Group: 3}
+  \renewcommand{\headrulewidth}{0.4pt}
+  \renewcommand{\headruleskip}{-10pt}
+  \renewcommand{\headrule}{\hbox to\headwidth{\color{RuleGray}\leaders\hrule height \headrulewidth\hfill}}
+  \fancyfoot[C]{\color{HeaderGray}\fontsize{9}{11}\selectfont Page \thepage}
+}
+
+\newcommand{\tableheader}[1]{%
+  \smash{\textcolor{white}{\bfseries #1}}%
+}
+
+\begin{document}
+
+\begin{titlepage}
+  \thispagestyle{empty}
+  \centering
+  \vspace*{0.18in}
+  {\fontsize{11}{14}\selectfont Vietnamese German University\par}
+  \vspace{2pt}
+  {\fontsize{10.5}{13}\selectfont Department of Computer Science and Engineering\par}
+
+  \vspace{1.20in}
+  {\color{RTOSBlue}\bfseries\fontsize{14}{17}\selectfont COURSE PROJECT REPORT\par}
+  \vspace{0.20in}
+  {\fontsize{11}{14}\selectfont \textbf{Course Title:} [Real-Time Systems / RTOS]\par}
+  \vspace{0.11in}
+  {\fontsize{11.5}{14}\selectfont Smart Controller System using RTOS\par}
+
+  \vspace{0.52in}
+  {\bfseries\fontsize{11.5}{14}\selectfont Group Members\par}
+  \vspace{0.17in}
+
+  \renewcommand{\arraystretch}{1.18}
+  \begin{tabularx}{\textwidth}{|>{\centering\arraybackslash}p{0.08\textwidth}|>{\centering\arraybackslash}p{0.22\textwidth}|>{\raggedright\arraybackslash}p{0.30\textwidth}|X|}
+    \hline
+    \rowcolor{RTOSBlue}
+    \tableheader{No.}        &
+    \tableheader{Student ID} &
+    \tableheader{Full Name}  &
+    \tableheader{Role / Tasks}                               \\
+    \hline
+    1                        & 10423053 & Nguyễn Hà Khải   & \\
+    \hline
+    2                        & 10423056 & Nguyễn Duy Khánh & \\
+    \hline
+    3                        & 10423093 & Tô Huỳnh Phúc    & \\
+    \hline
+    4                        & 10423097 & Ninh Hoàng Quân  & \\
+    \hline
+    5                        & 10423028 & Võ Minh Duy      & \\
+    \hline
+  \end{tabularx}
+\end{titlepage}
+
+\setcounter{page}{2}
+\pagestyle{reportstyle}
+\section*{Project Requirements (Reference)}
+
+\textbf{Objective:}
+Develop an RTOS-based Smart Climate Control System that monitors temperature and humidity, and controls a heater, cooler, and humidifier (represented by LEDs) to maintain target conditions. The project is a course demo and need not reflect real-world physical operation.
+
+\textbf{Hardware:}
+YoluUNO (ESP32-S3) microcontroller; DHT20 temperature/humidity sensor on I2C; three two-color LED actuators representing Heater (D3/D4), Cooler (D5/D6), and Humidifier (D7/D8); onboard status LED on GPIO48.
+
+\textbf{RTOS:}
+FreeRTOS (or any RTOS suitable for the microcontroller), using the task scheduler.
+
+\textbf{Required behaviors:}
+Serial print of temperature/humidity every 5 seconds; onboard LED blinks every 1 second; Heater LED shows GREEN/ORANGE/RED according to 3 defined temperature thresholds; Cooler activates for a fixed duration (e.g., 5 s) when temperature exceeds a threshold, then re-checks; Humidifier runs a GREEN (5 s) → YELLOW (3 s) → RED (2 s) sequence when humidity falls below a threshold, then re-checks humidity to decide whether to repeat.
+
+\textbf{Required tasks:}
+Blinky Task, Read Temperature Task, Cooler Task, Heater Task, Humidifier Task.
+
+\textbf{Deliverable:}
+GitHub repository link and result snapshots.
+
+\clearpage
+\input{sections/sec_1_introduction.tex}
+
+\clearpage
+\input{sections/sec_2_system_design.tex}
+
+\clearpage
+\input{sections/sec_3_system_implementation.tex}
+
+\clearpage
+\input{sections/sec_4_validation_results.tex}
+
+\clearpage
+\input{sections/sec_5_conclusion.tex}
+
+\end{document}
