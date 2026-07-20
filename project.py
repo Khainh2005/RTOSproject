@@ -42,7 +42,22 @@ async def task_heater():
     pass
 
 async def task_humidifier():
-    pass
+
+    while True:
+
+        await humidifier_sem.acquire()
+
+        rgb_led_D7.show(0, hex_to_rgb('#00ff00')) #(Green)
+        await asleep_ms(5000)
+        
+        rgb_led_D7.show(0, hex_to_rgb('#ffff00')) # Yellow
+        await asleep_ms(3000)
+        
+        rgb_led_D7.show(0, hex_to_rgb('#ff0000')) # Red
+        await asleep_ms(2000)
+
+        rgb_led_D7.show(0, hex_to_rgb('#000000'))
+        humidifier_finished_sem.release()
 
 async def task_LCD():
     pass
