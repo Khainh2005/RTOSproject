@@ -30,7 +30,31 @@ humidifier_finished_sem = asyncio.Semaphore(0)
 MAX_ITEMS = 2
 
 async def task_monitoring():
-    pass
+    while True:
+
+        data = {
+            "temp": await dht20.atemperature(),
+            "humi": await dht20.ahumidity()
+        }
+
+        add_latest(sensor_queue, sensor_ready_sem, data)
+        
+        #
+        # Send to LCD
+        #
+        if len(lcd_queue) < MAX_ITEMS:
+            lcd_queue.append(data)
+            lcd_sem.release()
+
+        #
+        # Heater decision
+        #
+        
+        if len(heater_queue) < MAX_ITEMS:
+            heater_queue.append(data)
+            heater_sem.release()
+            
+        await asleep_ms(5000)
 
 async def task_decision():
     pass
