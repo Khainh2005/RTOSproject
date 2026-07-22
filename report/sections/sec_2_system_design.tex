@@ -1,1 +1,105 @@
 \section{System Design using State Machine}
+\subsection{Overall System State Machine}
+
+The global system is modeled using an asynchronous, event-driven architecture utilizing FreeRTOS synchronization
+primitives (semaphores) to achieve non-blocking concurrency.
+
+\begin{itemize}
+  \item \textbf{Continuous Monitoring Thread:} Operates as a high-priority periodic task. It updates ambient metrics
+        continuously, flashing the status via the HEATER safety profile and refreshing the local LCD. Upon capturing
+        stable data, it dispatches an activation token via Release \texttt{sensor\_ready\_sem()} to wake the decision-making
+        engine.
+  \item \textbf{Dynamic Fork-Join Concurrency Control:} The DECISION MAKER parses the sensor data and evaluates
+        constraints. To execute adjustments concurrently without freezing peripheral systems, control flow forks into
+        three prospective branches depending on active variables: thermal adjustment (COOLER), moisture adjustment
+        (HUMIDIFIER), or an active bypass (Metrics are within the threshold).
+  \item \textbf{Adaptive Synchronization Barrier:} Once paths are dispatched, the system blocks at a Join synchronization
+        point. The feedback path safely routes control back to the baseline evaluation loop by implementing a dynamic
+        conditional check: Acquire necessary semaphores if any. This guarantees that if an actuator runs, the
+        decision-maker blocks until its fixed operational window finishes, while simultaneously ensuring that an idle
+        loop instantly recycles without stalling.
+\end{itemize}
+
+\subsection{Heater Control State Machine}
+
+This state machine manages the system safety levels. It controls the indicator LEDs (D3 and D4) using five distinct
+temperature boundaries as shown in the figure.
+
+\textbf{States Description}
+
+\begin{itemize}
+  \item \textbf{SAFE GREEN}: Default initial state on power-up, active during optimal ambient temperature conditions.
+  \item \textbf{WARNING ORANGE}: Triggered during moderate thermal deviations, indicates active climate regulation is required.
+  \item \textbf{CRITICAL RED}: Triggered during extreme thermal conditions, indicates high-risk environments requiring
+        immediate intervention.
+\end{itemize}
+
+\textbf{Transition Conditions}
+
+\begin{itemize}
+  \item \textbf{Initialization}: System boots directly into \textbf{SAFE GREEN}.
+  \item \textbf{From SAFE GREEN}: Remains in state on a, moves to \textbf{WARNING ORANGE} on b OR c, moves to
+        \textbf{CRITICAL RED} on d OR e.
+  \item \textbf{From WARNING ORANGE}: Remains in state on b or c, moves to \textbf{CRITICAL RED} on d OR e, moves to
+        \textbf{SAFE GREEN} on a.
+  \item \textbf{From CRITICAL RED}: Remains in state on d or e, moves to \textbf{WARNING ORANGE} on b OR c, moves to
+        \textbf{SAFE GREEN} on a.
+\end{itemize}
+
+\subsection{Cooler Control State Machine}
+
+\textbf{States Description}
+
+\begin{itemize}
+  \item \textbf{IDLE BLACK}: Default initial state when the system boots up, the cooler hardware remains completely
+        powered \textbf{OFF}.
+  \item \textbf{COOLING GREEN}: Active state indicating the physical cooler is running, the cooler runs for a strict,
+        non-blocking time window.
+\end{itemize}
+
+\textbf{Thresholds and Transition Conditions}
+
+\begin{itemize}
+  \item \textbf{Initialization}: The state machine directly enters \textbf{IDLE BLACK} upon system startup.
+  \item \textbf{Activation Threshold}: The system transitions from \textbf{IDLE BLACK} to \textbf{COOLING GREEN} if the
+        evaluated condition \texttt{[Temp \textgreater{} 28°C]} is met. This immediately triggers the physical
+        cooler hardware to turn \textbf{ON}.
+  \item \textbf{Fixed Duration}: Upon entering the \textbf{COOLING GREEN} state, a dedicated hardware or software timer
+        begins counting. The cooler stays continuously active for exactly \textbf{5 seconds}.
+  \item \textbf{Re-check Condition}: Once the condition \texttt{[Timer == 5s]} evaluates to true, the state machine
+        turns the cooler \textbf{OFF} and transitions straight back to \textbf{IDLE BLACK}. On the very next clock cycle
+        in the IDLE state, the temperature is re-checked against the 28°C activation threshold. If it is still hot, it
+        cycles back into cooling; otherwise, it remains safely idle.
+\end{itemize}
+
+\subsection{Humidifier Control State Machine}
+
+\textbf{States Description}
+
+\begin{itemize}
+  \item \textbf{IDLE BLACK}: Default initial state upon hardware system power-up, the physical humidifier hardware
+        remains powered \textbf{OFF}.
+  \item \textbf{GREEN}: The initial phase of active humidification running for an exact, timed duration.
+  \item \textbf{YELLOW}: The secondary intermediate phase of the active execution cycle.
+  \item \textbf{RED}: The final phase of the humidification sequence before monitoring checks reset.
+\end{itemize}
+
+\textbf{Activation Threshold and Transition Conditions}
+
+\begin{itemize}
+  \item \textbf{Initialization}: The state machine directly initializes into the \textbf{IDLE BLACK} state on startup.
+  \item \textbf{Activation Threshold}: The system transitions from \textbf{IDLE BLACK} to \textbf{GREEN} when the
+        condition \texttt{[Humi \textless{} 40]} evaluates to true. This transition instantly executes the action
+        \textbf{Turn ON Humidifier}.
+  \item \textbf{Phase 1 to Phase 2 (GREEN to YELLOW)}: The system remains in the GREEN phase for a fixed duration. Once
+        the internal tracking variable meets the condition \texttt{[Time == 5s]}, it transitions to \textbf{YELLOW}.
+  \item \textbf{Phase 2 to Phase 3 (YELLOW to RED)}: The system holds in the YELLOW state for an intermediate window.
+        Once the condition \texttt{[Time == 3s]} evaluates to true, it transitions straight to \textbf{RED}.
+  \item \textbf{Cycle Completion and Re-check (RED to IDLE BLACK)}: The system processes its final active interval in
+        the RED state. When the condition \texttt{[Time == 2s]} is reached, the state machine drops back into
+        \textbf{IDLE BLACK}.
+\end{itemize}
+
+In the immediate next execution clock cycle inside \textbf{IDLE BLACK}, the relative humidity is re-evaluated. If
+\texttt{Humi < 40} remains true, the multi-phase cycle repeats immediately starting at \textbf{GREEN}; otherwise, the
+hardware drops out of operation and settles in the idle baseline.

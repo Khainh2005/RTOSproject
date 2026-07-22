@@ -54,7 +54,14 @@ async def task_decision():
     pass
 
 async def task_cooler():
-    pass
+    while True:
+        await cooler_sem.acquire()
+        
+        rgb_led_D5.show(0, hex_to_rgb('#00ff00')) #(Green)
+        await asleep_ms(5000)
+        rgb_led_D5.show(0, hex_to_rgb('#000000'))
+        cooler_finished_sem.release()
+
 
 async def task_heater():
     while True:
@@ -85,7 +92,22 @@ async def task_humidifier():
         humidifier_finished_sem.release()
 
 async def task_LCD():
-    pass
+    while True:
+
+        await lcd_sem.acquire()
+
+        data = lcd_queue.pop(0)
+
+        lcd1602.clear()
+
+        lcd1602.show("TEMP:",0,0)
+        lcd1602.show(str(data["temp"]),0,9)
+        lcd1602.show(str('*C'), 0, 13)
+
+        lcd1602.show("HUMI:",1,0)
+        lcd1602.show(str(data["humi"]),1,9)
+        lcd1602.show(str('%'), 1, 13)
+
 
 def add_latest(queue, sem, data):
     if len(queue) < MAX_ITEMS:
