@@ -60,7 +60,14 @@ async def task_decision():
     pass
 
 async def task_cooler():
-    pass
+    while True:
+        await cooler_sem.acquire()
+        
+        rgb_led_D5.show(0, hex_to_rgb('#00ff00')) #(Green)
+        await asleep_ms(5000)
+        rgb_led_D5.show(0, hex_to_rgb('#000000'))
+        cooler_finished_sem.release()
+
 
 async def task_heater():
     pass
