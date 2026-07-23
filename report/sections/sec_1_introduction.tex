@@ -1,2 +1,63 @@
 \section{Introduction}
+\subsection{Problem Description}
+
+The proposed system is an RTOS-based smart climate controller that continuously monitors environmental temperature and
+humidity using a DHT20 sensor. Based on the measured values, the system automatically controls visual actuator
+indicators represented by LEDs for the heater, cooler, and humidifier. The purpose of the system is to maintain
+environmental conditions within predefined ranges and demonstrate real-time task scheduling and coordination on an
+ESP32-S3 microcontroller.
+
+Temperature and humidity regulation is important in many applications such as agriculture, storage facilities, and
+greenhouse management. Maintaining suitable environmental conditions can improve productivity and reduce the risk of
+damage caused by excessive heat, low temperature, or insufficient humidity. In this project, the physical actuators are
+represented by LEDs; however, the same control logic could be extended to real devices such as fans, heaters, and
+humidifiers.
+
+\subsection{Required Features}
+
+The system implements the following required monitoring and control functions:
+
+\begin{itemize}
+  \item The DHT20 sensor measures temperature and humidity periodically every 5 seconds.
+  \item The measured values are displayed through the serial monitor.
+  \item The Heater indicator (LEDs D3 and D4) changes color according to the temperature level:
+
+        \begin{itemize}
+          \item GREEN: temperature within the safe operating range.
+          \item ORANGE: temperature approaching a warning threshold.
+          \item RED: temperature in a critical range.
+        \end{itemize}
+  \item The Cooler indicator (LEDs D5 and D6) is activated for a fixed duration of 5 seconds when the temperature exceeds the
+        cooling threshold. After the activation period, the temperature is measured again to determine whether additional
+        cooling is required.
+  \item The Humidifier indicator (LEDs D7 and D8) executes a timed sequence when the humidity falls below the specified
+        threshold:
+
+        \begin{itemize}
+          \item GREEN for 5 seconds
+          \item YELLOW for 3 seconds
+          \item RED for 2 seconds
+        \end{itemize}
+  \item After the sequence completes, the humidity value is checked again to determine whether the sequence should be repeated.
+  \item The onboard status LED on GPIO48 blinks every second to indicate that the RTOS scheduler is running correctly.
+\end{itemize}
+
+\subsection{Additional Proposed Features}
+
+In addition to the required functionality, an intermediate Decision Maker task is introduced between the
+sensor-monitoring task and the actuator tasks. The Decision Maker receives the latest temperature and humidity
+measurements and determines which actuator tasks should be activated.
+
+This additional component improves synchronization between tasks and prevents unintended repeated activations.
+According to the project requirements, sensor monitoring should resume only after the cooler or humidifier has
+completed its current operation. If the monitoring task directly signaled actuator tasks, a situation could occur in
+which one actuator finishes earlier than another and immediately triggers a new measurement cycle. For example, if the
+cooler finishes while the humidifier sequence is still running, the newly measured humidity value could cause the
+humidifier task to be activated again before its previous sequence has completed. Such behavior would lead to
+overlapping operations and potentially incorrect control decisions.
+
+By introducing the Decision Maker, actuator execution is coordinated more effectively, ensuring that each control
+sequence completes before a new activation request is issued. This design demonstrates the use of RTOS synchronization
+concepts and improves the reliability of the overall control system.
+
 
