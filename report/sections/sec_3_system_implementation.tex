@@ -1,1 +1,180 @@
 \section{System Implementation}
+
+\subsection{Semaphore and Synchronization Strategy}
+
+The system uses a producer-consumer architecture with multiple semaphores and queues to synchronize concurrent RTOS
+tasks.
+
+The Sensor Monitoring Task acts as the producer. Every 5 seconds, it reads the latest temperature and humidity values
+from the DHT20 sensor and stores them in a shared queue. After new data is available, the task releases the semaphore
+\texttt{sensor\_ready\_sem} to notify the Decision Maker Task.
+
+The Decision Maker Task acts as the central coordinator. It waits for \texttt{sensor\_ready\_sem}, retrieves the newest
+sensor reading, and distributes the data to the LCD and Heater tasks through dedicated queues. Depending on the
+measured temperature and humidity, it may also activate the Cooler Task or Humidifier Task by releasing the
+corresponding semaphores.
+
+% \begin{center}
+%   \renewcommand{\arraystretch}{1.25}
+%   \begin{tabularx}{\textwidth}{|>{\ttfamily\raggedright\arraybackslash}p{0.31\textwidth}|>{\raggedright\arraybackslash}X|}
+%     \hline
+%     \rowcolor{RTOSBlue}\multicolumn{1}{|c|}{\color{white}\bfseries\sffamily Semaphore / Queue} & \multicolumn{1}{c|}{\color{white}\bfseries Purpose}     \\
+%     \hline
+%     sensor\_ready\_sem                                                                         & Signals that a new sensor sample is available.          \\
+%     \hline
+%     lcd\_sem                                                                                   & Signals that LCD data are ready to display.             \\
+%     \hline
+%     heater\_sem                                                                                & Activates the heater task.                              \\
+%     \hline
+%     cooler\_sem                                                                                & Activates the cooler task.                              \\
+%     \hline
+%     humidifier\_sem                                                                            & Activates the humidifier task.                          \\
+%     \hline
+%     cooler\_finished\_sem                                                                      & Signals that the cooler has completed its cycle.        \\
+%     \hline
+%     humidifier\_finished\_sem                                                                  & Signals that the humidifier has completed its sequence. \\
+%     \hline
+%   \end{tabularx}
+% \end{center}
+
+This design prevents race conditions between tasks and ensures that control actions are executed only when valid sensor
+data is available. Furthermore, the completion semaphores guarantee that the Decision Maker waits for actuator
+operations to finish before continuing with further control decisions.
+
+\subsection{Read Temperature Task}
+
+\textbf{Priority:} Medium
+
+\textbf{Period:} 5 seconds
+
+The Read Temperature Task periodically acquires temperature and humidity measurements from the DHT20 sensor. The
+collected data is stored in a shared queue and signaled through the \texttt{sensor\_ready\_sem} semaphore. This task
+acts as the producer in the producer-consumer communication pattern.
+
+\textbf{Main implementation:}
+
+\begin{lstlisting}
+async def task_monitoring():
+    while True:
+        data = {
+            "temp": await dht20.atemperature(),
+            "humi": await dht20.ahumidity()
+        }
+        add_latest(sensor_queue, sensor_ready_sem, data)
+        await asleep_ms(5000)
+\end{lstlisting}
+
+The task continuously generates environmental measurements and provides them to the Decision Maker Task for further
+processing.
+
+\subsection{Cooler Task}
+
+\textbf{Priority:} High
+
+\textbf{Trigger Condition:} Temperature \textgreater{} 28°C
+
+The Cooler Task is event-driven and remains blocked until the \texttt{cooler\_sem} semaphore is released by the
+Decision Maker Task. Once activated, the cooler LED turns GREEN for a fixed duration of 5 seconds, representing the
+cooling process. After the timer expires, the LED is turned OFF and a completion signal is sent through
+\texttt{cooler\_finished\_sem}.
+
+\textbf{Main implementation:}
+
+\begin{lstlisting}
+async def task_cooler():
+    while True:
+        await cooler_sem.acquire()
+        rgb_led_D5.show(0, hex_to_rgb('#00ff00'))
+        await asleep_ms(5000)
+        rgb_led_D5.show(0, hex_to_rgb('#000000'))
+        cooler_finished_sem.release()
+\end{lstlisting}
+
+\textbf{State Machine:}
+
+\begin{itemize}
+  \item IDLE (BLACK): Cooler inactive.
+  \item COOLING (GREEN): Cooler active for 5 seconds.
+  \item Return to IDLE after timer expiration.
+\end{itemize}
+
+The Cooler Task state machine is shown in Figure~\ref{fig:cooler-state-machine}.
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.90\textwidth]{images/cooler_state_machine.png}
+%   \caption{Cooler control state machine.}
+%   \label{fig:cooler-state-machine}
+% \end{figure}
+
+\subsection{Heater Task}
+
+\textbf{Priority:} Medium
+
+\textbf{Trigger Condition:} New temperature reading available.
+
+The Heater Task provides a visual indication of environmental temperature conditions. The task waits for a signal from
+\texttt{heater\_sem}, retrieves the latest temperature value, and updates the RGB LED according to predefined
+temperature ranges.
+
+\textbf{Main implementation:}
+
+\begin{lstlisting}
+async def task_heater():
+    while True:
+        await heater_sem.acquire()
+        temp = heater_queue.pop(0)["temp"]
+        if 20 <= temp <= 25:
+            rgb_led_D3.show(0, hex_to_rgb('#00ff00'))
+        elif 15 <= temp <= 30:
+            rgb_led_D3.show(0, hex_to_rgb('#ffff00'))
+        else:
+            rgb_led_D3.show(0, hex_to_rgb('#ff0000'))
+\end{lstlisting}
+
+\textbf{State Machine:}
+
+\begin{itemize}
+  \item SAFE (GREEN): 20°C ≤ Temp ≤ 25°C
+  \item WARNING (YELLOW): 15°C ≤ Temp \textless{} 20°C or 25°C \textless{} Temp ≤ 30°C
+  \item CRITICAL (RED): Temp \textless{} 15°C or Temp \textgreater{} 30°C
+\end{itemize}
+
+The Heater Task continuously reflects the current thermal condition of the environment.
+
+\subsection{Humidifier Task}
+
+\textbf{Priority:} High
+
+\textbf{Trigger Condition:} Humidity \textless{} 40\%
+
+The Humidifier Task is activated when the humidity falls below the predefined threshold. After receiving a signal
+through \texttt{humidifier\_sem}, it executes a timed three-stage sequence representing the humidification process.
+
+\textbf{Main implementation:}
+
+\begin{lstlisting}
+async def task_humidifier():
+    while True:
+        await humidifier_sem.acquire()
+        rgb_led_D7.show(0, hex_to_rgb('#00ff00'))
+        await asleep_ms(5000)
+        rgb_led_D7.show(0, hex_to_rgb('#ffff00'))
+        await asleep_ms(3000)
+        rgb_led_D7.show(0, hex_to_rgb('#ff0000'))
+        await asleep_ms(2000)
+        rgb_led_D7.show(0, hex_to_rgb('#000000'))
+        humidifier_finished_sem.release()
+\end{lstlisting}
+
+\textbf{State Machine:}
+
+\begin{itemize}
+  \item IDLE (BLACK): Humidifier inactive.
+  \item GREEN: Active humidification for 5 seconds.
+  \item YELLOW: Intermediate phase for 3 seconds.
+  \item RED: Final phase for 2 seconds.
+  \item Return to IDLE and re-check humidity.
+\end{itemize}
+
+The completion semaphore informs the Decision Maker that the humidification cycle has finished.

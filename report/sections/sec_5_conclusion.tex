@@ -1,1 +1,33 @@
 \section{Conclusion and Perspective}
+
+\subsection{Summary of Achievements}
+
+The project successfully implemented an RTOS-based smart climate control system that monitors temperature and humidity
+and coordinates multiple actuator tasks using FreeRTOS-style asynchronous scheduling. The system fulfills the main
+course requirements, including periodic sensor acquisition, LCD display updates, heater state indication, timed cooler
+activation, and the multi-stage humidifier sequence. In addition, a dedicated Decision Maker task was introduced to
+coordinate actuator execution and improve synchronization between monitoring and control tasks. This design reduces the
+possibility of overlapping actuator activations and demonstrates the practical use of task coordination mechanisms in
+real-time embedded systems.
+
+\subsection{Limitations}
+
+Several simplifications were made in this project. First, the heater, cooler, and humidifier are represented only by
+RGB LED indicators rather than real physical actuators; therefore, the system does not actually modify the surrounding
+temperature or humidity. Second, the project was developed and validated primarily in a simulation environment, so
+additional testing on the YoluUNO hardware platform is necessary to evaluate timing accuracy, sensor reliability, and
+overall system behavior under real operating conditions. Furthermore, the current control logic is threshold-based and
+does not account for environmental dynamics such as delayed actuator effects or sensor noise.
+
+\subsection{Future Work}
+
+\begin{itemize}
+  \item Implement the system on physical hardware using real actuators such as fans, heaters, and humidifiers.
+  \item Port the software from Python to C++ to achieve better integration with embedded RTOS environments and more efficient
+        low-level hardware control.
+  \item Measure the response time of the physical actuators and incorporate this information into the control logic to prevent
+        unnecessary repeated activations.
+  \item Extend the system with closed-loop control methods such as PID control for smoother and more accurate regulation of
+        temperature and humidity.
+  \item Add features such as wireless monitoring, data logging, fault detection, and power-saving operating modes.
+\end{itemize}
