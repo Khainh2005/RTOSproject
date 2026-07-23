@@ -31,7 +31,6 @@ MAX_ITEMS = 2
 
 async def task_monitoring():
     while True:
-
         data = {
             "temp": await dht20.atemperature(),
             "humi": await dht20.ahumidity()
@@ -39,17 +38,12 @@ async def task_monitoring():
 
         add_latest(sensor_queue, sensor_ready_sem, data)
         
-        #
         # Send to LCD
-        #
         if len(lcd_queue) < MAX_ITEMS:
             lcd_queue.append(data)
             lcd_sem.release()
 
-        #
         # Heater decision
-        #
-        
         if len(heater_queue) < MAX_ITEMS:
             heater_queue.append(data)
             heater_sem.release()
@@ -70,20 +64,27 @@ async def task_cooler():
 
 
 async def task_heater():
-    pass
+    while True:
+        await heater_sem.acquire()
+
+        temp = heater_queue.pop(0)["temp"]
+        if 20 <= temp <= 25:
+            rgb_led_D3.show(0, hex_to_rgb('#00ff00'))
+        elif 15 <= temp <= 30:
+            rgb_led_D3.show(0, hex_to_rgb('#ffff00'))
+        else:
+            rgb_led_D3.show(0, hex_to_rgb('#ff0000'))
 
 async def task_humidifier():
-
     while True:
-
         await humidifier_sem.acquire()
 
         rgb_led_D7.show(0, hex_to_rgb('#00ff00')) #(Green)
         await asleep_ms(5000)
-        
+
         rgb_led_D7.show(0, hex_to_rgb('#ffff00')) # Yellow
         await asleep_ms(3000)
-        
+
         rgb_led_D7.show(0, hex_to_rgb('#ff0000')) # Red
         await asleep_ms(2000)
 
