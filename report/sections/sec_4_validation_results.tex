@@ -1,1 +1,83 @@
 \section{Validation Results in Simulation}
+\subsection{Monitoring Output}
+
+Figure~\ref{fig:monitoring-output} shows the LCD displaying the latest temperature and humidity values obtained from
+the DHT20 sensor. The monitoring task updates the measurements every 5 seconds and forwards the data to the Decision
+Maker Task for evaluation.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=3.40in]{images/monitoring_lcd.png}
+  \caption{LCD displaying the latest temperature and humidity measurements.}
+  \label{fig:monitoring-output}
+\end{figure}
+
+\FloatBarrier
+\subsection{Heater Behavior}
+
+Figure~\ref{fig:heater-behavior} demonstrates the Heater indicator state transitions. The LED displays GREEN when the
+temperature is within the normal range (20--25°C), YELLOW when the temperature enters the warning range (15--20°C or
+25--30°C), and RED when the temperature reaches a critical condition (\textless15°C or \textgreater30°C).
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.30\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/heater_critical_red.png}
+    \caption{Critical RED state.}
+    \label{fig:heater-critical-red}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.30\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/heater_safe_green.png}
+    \caption{Safe GREEN state.}
+    \label{fig:heater-safe-green}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.30\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/heater_warning_yellow.png}
+    \caption{Warning YELLOW state.}
+    \label{fig:heater-warning-yellow}
+  \end{subfigure}
+  \caption{Heater indicator behavior for critical, safe, and warning temperature ranges.}
+  \label{fig:heater-behavior}
+\end{figure}
+
+\subsection{Cooler Behavior}
+
+Figure~\ref{fig:cooler-behavior} shows the Cooler Task activation. When the temperature exceeds 28°C, the cooler LED
+turns GREEN and remains active for 5 seconds. After the cooling interval expires, the LED turns OFF and the temperature
+is evaluated again.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.43\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/cooler_active_green.png}
+    \caption{Cooler active in the GREEN state.}
+    \label{fig:cooler-active-green}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.43\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/cooler_idle_off.png}
+    \caption{Cooler inactive in the OFF state.}
+    \label{fig:cooler-idle-off}
+  \end{subfigure}
+  \caption{Cooler indicator during active cooling and after returning to the idle state.}
+  \label{fig:cooler-behavior}
+\end{figure}
+
+\subsection{Humidifier Behavior}
+
+The Humidifier control sequence is described below. When humidity falls below 40\%, the humidifier executes a timed
+sequence consisting of GREEN (5 s), YELLOW (3 s), and RED (2 s). After completion, the system returns to the idle state
+and rechecks the humidity condition.
+
+\subsection{Source Code Repository}
+
+GitHub link: \url{https://github.com/Khainh2005/RTOSproject}
+
+\FloatBarrier
