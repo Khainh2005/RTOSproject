@@ -14,28 +14,46 @@ sensor reading, and distributes the data to the LCD and Heater tasks through ded
 measured temperature and humidity, it may also activate the Cooler Task or Humidifier Task by releasing the
 corresponding semaphores.
 
-% \begin{center}
-%   \renewcommand{\arraystretch}{1.25}
-%   \begin{tabularx}{\textwidth}{|>{\ttfamily\raggedright\arraybackslash}p{0.31\textwidth}|>{\raggedright\arraybackslash}X|}
-%     \hline
-%     \rowcolor{RTOSBlue}\multicolumn{1}{|c|}{\color{white}\bfseries\sffamily Semaphore / Queue} & \multicolumn{1}{c|}{\color{white}\bfseries Purpose}     \\
-%     \hline
-%     sensor\_ready\_sem                                                                         & Signals that a new sensor sample is available.          \\
-%     \hline
-%     lcd\_sem                                                                                   & Signals that LCD data are ready to display.             \\
-%     \hline
-%     heater\_sem                                                                                & Activates the heater task.                              \\
-%     \hline
-%     cooler\_sem                                                                                & Activates the cooler task.                              \\
-%     \hline
-%     humidifier\_sem                                                                            & Activates the humidifier task.                          \\
-%     \hline
-%     cooler\_finished\_sem                                                                      & Signals that the cooler has completed its cycle.        \\
-%     \hline
-%     humidifier\_finished\_sem                                                                  & Signals that the humidifier has completed its sequence. \\
-%     \hline
-%   \end{tabularx}
-% \end{center}
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+
+\begin{tabular}{|l|l|}
+    \hline
+    \rowcolor{RTOSBlue}
+    \color{white}\bfseries\sffamily Semaphore / Queue &
+    \color{white}\bfseries\sffamily Purpose \\
+    \hline
+
+    \texttt{sensor\_ready\_sem} &
+    Signals that a new sensor sample is available. \\
+    \hline
+
+    \texttt{lcd\_sem} &
+    Signals that LCD data are ready to display. \\
+    \hline
+
+    \texttt{heater\_sem} &
+    Activates the heater task. \\
+    \hline
+
+    \texttt{cooler\_sem} &
+    Activates the cooler task. \\
+    \hline
+
+    \texttt{humidifier\_sem} &
+    Activates the humidifier task. \\
+    \hline
+
+    \texttt{cooler\_finished\_sem} &
+    Signals that the cooler has completed its cycle. \\
+    \hline
+
+    \texttt{humidifier\_finished\_sem} &
+    Signals that the humidifier has completed its sequence. \\
+    \hline
+\end{tabular}
+
+\end{center}
 
 This design prevents race conditions between tasks and ensures that control actions are executed only when valid sensor
 data is available. Furthermore, the completion semaphores guarantee that the Decision Maker waits for actuator
